@@ -1,0 +1,602 @@
+ORG 0
+ACALL CONFIGURE_LCD
+
+MOV R5, #00h
+
+MOV A, #'I'
+ACALL SEND_DATA ;sendin ınput to the led
+MOV A, #'N'
+ACALL SEND_DATA
+MOV A, #'P'
+ACALL SEND_DATA
+MOV A, #'U'
+ACALL SEND_DATA
+MOV A, #'T'
+ACALL SEND_DATA
+MOV A, #'='
+ACALL SEND_DATA 
+
+ACALL KEYBOARD
+ACALL SEND_DATA
+ANL A, #0Fh
+MOV R1, A ; first digit of the input, it will be stored another register different than scond and third digit because of the >255 case.
+
+
+ACALL KEYBOARD
+ACALL SEND_DATA
+ANL A, #0Fh
+MOV B, #10d
+MUL AB
+MOV R0, A ; second digit of the input stored in R0
+
+ACALL KEYBOARD
+ACALL SEND_DATA
+ANL A, #0Fh
+ADD A, R0
+MOV R0, A ; third digit of the input stored in R0.
+
+
+
+
+MOV A, #0C0H
+ACALL SEND_COMMAND 
+
+Apressed:
+ACALL KEYBOARD
+CJNE A, #'A', Apressed ; if A is pressed result will be shown
+
+MOV A, #'R'
+ACALL SEND_DATA
+MOV A, #'S'
+ACALL SEND_DATA
+MOV A, #'T'
+ACALL SEND_DATA
+MOV A, #'='
+ACALL SEND_DATA
+MOV A, #'('
+ACALL SEND_DATA ; to show result, rst iz written
+
+
+
+
+CJNE R1, #3h, BASAMAK2 ; checking for third digit because of the >255 case
+		MOV A, #0
+		MOV R1,#100
+		ADD A, R0
+		Add A,R1 
+		Subb A, #56 
+		MoV R0, A 
+		MOV R1, #1d 
+		SJMP GO
+BASAMAK2: CJNE R1, #2h,BASAMAK1 ;checking for second digit because of the >255 case
+	CJNE R0, #56, ASAGI
+	ASAGI: 
+	JC BASAMAK1
+	MOV A, R0
+	Subb A,#56d 
+	MOV R0,A 
+	MOV R1, #1 
+	SJmp GO
+BASAMAK1: ;checking for fırst digit because of the >255 case
+MOV A, R1
+MOV B, #100d
+MUL AB
+MOV R1, A
+clr A
+Add A,R1
+ADD A, R0
+MoV R1, #0 
+mOV R0, A
+GO:
+
+AY: 		CJNE R1, #1h, KUCUK
+		LJMP BUYUK ;if we have r1=1 which represents the number is bigger than 255.
+
+KUCUK: 	CJNE R0, #31, OCAK  ;generel purpose is the checking the number directly with cjne
+		SETB CY
+OCAK: 		JNC SUBAT
+		MOV R5, #1
+		CLR CY
+		SUBB A,#0
+		MOV R6, A
+		lJMP GUNLER
+
+SUBAT:		CJNE R0, #60, SBT 
+		SETB CY
+SBT: 		JNC MART
+		MOV R5, #2
+		CLR CY
+        	SUBB A,#31
+		MOV R6, A
+		lJMP GUNLER
+
+MART:		CJNE R0, #91, MARTT
+		SETB CY
+MARTT: 		JNC NISAN
+		MOV R5, #3
+		CLR CY
+		SUBB A,#60
+		MOV R6, A
+		lJMP GUNLER
+
+NISAN: 		CJNE R0, #121, NISANN
+		SETB CY
+NISANN: 	JNC MAYIS
+		MOV R5, #4
+		CLR CY
+		SUBB A,#91
+		MOV R6, A
+		lJMP GUNLER
+
+MAYIS: 		CJNE R0, #152, MAYISS
+		SETB CY
+MAYISS: 	JNC HAZIRAN
+		MOV R5, #5
+		CLR CY
+		SUBB A,#121
+		MOV R6, A
+		SJMP GUNLER
+
+HAZIRAN: 	CJNE R0, #182, HAZIRANN
+		SETB CY
+HAZIRANN: 	JNC TEMMUZ
+		MOV R5, #6
+		CLR CY
+		SUBB A,#152
+		MOV R6, A
+		SJMP GUNLER
+
+TEMMUZ: 	CJNE R0, #213, TEMMUZZ
+		SETB CY
+TEMMUZZ: 	JNC AGUSTOS
+		MOV R5, #7
+		CLR CY
+		SUBB A,#182
+		MOV R6, A
+		SJMP GUNLER
+
+AGUSTOS: 	CJNE R0, #244, AGUSTOSS
+		SETB CY
+AGUSTOSS: 	JNC EYLUL
+		MOV R5, #8
+		CLR CY
+		SUBB A,#213
+		MOV R6, A
+		SJMP GUNLER
+
+EYLUL:		MOV R5, #9
+		CLR CY
+		SUBB A,#244
+		MOV R6, A
+		SJMP GUNLER
+
+BUYUK:	CJNE R0, #18, EYLULL ;the steps are same until here now we have bigger than 255. so I stored R1=1 and remainder in the R0.
+		SETB CY
+EYLULL: 	JNC EKIM
+		MOV R5, #9
+		CLR CY
+		ADD A,#12  ;ADDED 12 becaulse 255 DAY OF the year is SEPT 11 WED.
+		MOV R6, A
+		SJMP GUNLER
+
+EKIM: 		CJNE R0, #49, EKIMM
+		SETB CY
+EKIMM: 		JNC KASIM
+		MOV R5, #10
+		CLR CY
+		SUBB A,#18 ; subtract 18 because remainder from the september is 18 (30-12)
+		MOV R6, A
+		SJMP GUNLER
+
+KASIM: 		CJNE R0, #79, KASIMM
+		SETB CY
+KASIMM: 	JNC ARALIK
+		MOV R5, #11
+		CLR CY
+		SUBB A,#49 ;31+18=49, which is related to the sept and october 
+		MOV R6, A
+		SJMP GUNLER
+
+ARALIK: 	CJNE R0, #110, ARALIKK
+ARALIKK:	MOV R5, #12
+		CLR CY
+		SUBB A,#79
+		MOV R6, A
+		SJMP GUNLER
+
+
+
+GUNLER:		MOV A , R0
+		MOV B , #7
+		DIV AB  
+		MOV R2, B
+		MOV A, R1 
+		ADD A, R1 
+		ADD A, A 
+		ADD A, R2 
+		MOV B , #7
+		DIV AB 
+		Mov R3 , B ; For ther smaller than 255 I directly use the remainder for the day,however, bigger than > 255 case is different 255 day is the year is wed so the calculations is done respect to this condition.
+
+AY1:
+DEC R5   ;according to the r5 value the month is written 
+CJNE R5,#0, AY2
+MOV A, #'J'
+ACALL SEND_DATA
+MOV A, #'A'
+ACALL SEND_DATA
+MOV A, #'N'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY2:
+DEC R5
+    CJNE R5,#0, AY3
+MOV A, #'F'
+ACALL SEND_DATA
+MOV A, #'E'
+ACALL SEND_DATA
+MOV A, #'B'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY3:
+DEC R5
+    CJNE R5,#0, AY4
+MOV A, #'M'
+ACALL SEND_DATA
+MOV A, #'A'
+ACALL SEND_DATA
+MOV A, #'R'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY4:
+DEC R5
+    CJNE R5,#0, AY5
+MOV A, #'A'
+ACALL SEND_DATA
+MOV A, #'P'
+ACALL SEND_DATA
+MOV A, #'R'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY5:
+DEC R5
+    CJNE R5,#0, AY6
+MOV A, #'M'
+ACALL SEND_DATA
+MOV A, #'A'
+ACALL SEND_DATA
+MOV A, #'Y'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY6:
+DEC R5
+    CJNE R5,#0, AY7
+MOV A, #'J'
+ACALL SEND_DATA
+MOV A, #'U'
+ACALL SEND_DATA
+MOV A, #'N'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY7:
+DEC R5
+    CJNE R5,#0, AY8
+MOV A, #'J'
+ACALL SEND_DATA
+MOV A, #'U'
+ACALL SEND_DATA
+MOV A, #'L'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY8:
+DEC R5
+    CJNE R5,#0, AY9
+MOV A, #'A'
+ACALL SEND_DATA
+MOV A, #'U'
+ACALL SEND_DATA
+MOV A, #'G'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY9:
+DEC R5
+    CJNE R5,#0, AY10
+MOV A, #'S'
+ACALL SEND_DATA
+MOV A, #'E'
+ACALL SEND_DATA
+MOV A, #'P'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY10:
+DEC R5
+    CJNE R5,#0, AY11
+MOV A, #'O'
+ACALL SEND_DATA
+MOV A, #'C'
+ACALL SEND_DATA
+MOV A, #'T'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY11:
+DEC R5
+    CJNE R5,#0, AY12
+MOV A, #'N'
+ACALL SEND_DATA
+MOV A, #'O'
+ACALL SEND_DATA
+MOV A, #'V'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+AY12:
+DEC R5
+    CJNE R5,#0, AY11
+MOV A, #'D'
+ACALL SEND_DATA
+MOV A, #'E'
+ACALL SEND_DATA
+MOV A, #'C'
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+LJMP SAYI
+
+SAYI:
+CJNE R6,#9, NOT_LESS_THAN_10 ; ıf we have one digit we can directly sent the fırst digit
+MOV A,R6
+ADD A, #30h
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+SJMP DAY
+
+NOT_LESS_THAN_10: ; ıf we have 2 digit we sent the digit one by one 
+MOV A, R6
+MOV B, #10
+DIV AB
+ADD A, #30h
+ACALL SEND_DATA
+MOV A, B
+ADD A, #30h
+ACALL SEND_DATA
+MOV A, #','
+ACALL SEND_DATA
+SJMP DAY
+
+DAY:
+CJNE R3,#0, PZT
+MOV A, #'S'
+ACALL SEND_DATA
+MOV A, #'U'
+ACALL SEND_DATA
+MOV A, #'N'
+ACALL SEND_DATA
+LJMP DONE
+
+
+PZT:
+DEC R3		;according to R3 value days are written
+CJNE R3,#0, SL
+MOV A, #'M'
+ACALL SEND_DATA
+MOV A, #'O'
+ACALL SEND_DATA
+MOV A, #'N'
+ACALL SEND_DATA
+LJMP DONE
+
+SL:
+DEC R3
+CJNE R3,#0, CRMB
+MOV A, #'T'
+ACALL SEND_DATA
+MOV A, #'U'
+ACALL SEND_DATA
+MOV A, #'E'
+ACALL SEND_DATA
+LJMP DONE
+
+CRMB:
+DEC R3
+CJNE R3,#0, PRSMB
+MOV A, #'W'
+ACALL SEND_DATA
+MOV A, #'E'
+ACALL SEND_DATA
+MOV A, #'D'
+ACALL SEND_DATA
+LJMP DONE
+
+PRSMB:
+DEC R3
+CJNE R3,#0, CUMA
+MOV A, #'T'
+ACALL SEND_DATA
+MOV A, #'H'
+ACALL SEND_DATA
+MOV A, #'U'
+ACALL SEND_DATA
+LJMP DONE
+
+CUMA:
+DEC R3
+CJNE R3,#0, CMT
+MOV A, #'F'
+ACALL SEND_DATA
+MOV A, #'R'
+ACALL SEND_DATA
+MOV A, #'I'
+ACALL SEND_DATA
+LJMP DONE
+
+CMT:
+DEC R3
+CJNE R3,#0, PRSMB
+MOV A, #'S'
+ACALL SEND_DATA
+MOV A, #'A'
+ACALL SEND_DATA
+MOV A, #'T'
+ACALL SEND_DATA
+LJMP DONE
+
+DONE:
+MOV A, #')'
+ACALL SEND_DATA ; process is done
+
+
+STAY_HERE: SJMP STAY_HERE ; to make the code stay here
+
+;the rest of the code is taken from the tutorial lab.
+
+CONFIGURE_LCD:	;THIS SUBROUTINE SENDS THE INITIALIZATION COMMANDS TO THE LCD
+	mov a,#38H	;TWO LINES, 5X7 MATRIX
+	acall SEND_COMMAND
+	mov a,#0FH	;DISPLAY ON, CURSOR BLINKING
+	acall SEND_COMMAND
+	mov a,#06H	;INCREMENT CURSOR (SHIFT CURSOR TO RIGHT)
+	acall SEND_COMMAND
+	mov a,#01H	;CLEAR DISPLAY SCREEN
+	acall SEND_COMMAND
+	mov a,#80H	;FORCE CURSOR TO BEGINNING OF THE FIRST LINE
+	acall SEND_COMMAND
+	ret
+
+
+
+SEND_COMMAND:
+	mov p1,a		;THE COMMAND IS STORED IN A, SEND IT TO LCD
+	clr p3.5		;RS=0 BEFORE SENDING COMMAND
+	clr p3.6		;R/W=0 TO WRITE
+	setb p3.7	;SEND A HIGH TO LOW SIGNAL TO ENABLE PIN
+	acall DELAY
+	clr p3.7
+	ret
+
+
+SEND_DATA:
+	mov p1,a		;SEND THE DATA STORED IN A TO LCD
+	setb p3.5	;RS=1 BEFORE SENDING DATA
+	clr p3.6		;R/W=0 TO WRITE
+	setb p3.7	;SEND A HIGH TO LOW SIGNAL TO ENABLE PIN
+	acall DELAY
+	clr p3.7
+	ret
+
+
+DELAY:
+	push 0
+	push 1
+	mov r0,#50
+DELAY_OUTER_LOOP:
+	mov r1,#255
+	djnz r1,$
+	djnz r0,DELAY_OUTER_LOOP
+	pop 1
+	pop 0
+	ret
+
+
+KEYBOARD: ;takes the key pressed from the keyboard and puts it to A
+	mov	P0, #0ffh	;makes P0 input
+K1:
+	mov	P2, #0	;ground all rows
+	mov	A, P0
+	anl	A, #00001111B
+	cjne	A, #00001111B, K1
+K2:
+	acall	DELAY
+	mov	A, P0
+	anl	A, #00001111B
+	cjne	A, #00001111B, KB_OVER
+	sjmp	K2
+KB_OVER:
+	acall DELAY
+	mov	A, P0
+	anl	A, #00001111B
+	cjne	A, #00001111B, KB_OVER1
+	sjmp	K2
+KB_OVER1:
+	mov	P2, #11111110B
+	mov	A, P0
+	anl	A, #00001111B
+	cjne	A, #00001111B, ROW_0
+	mov	P2, #11111101B
+	mov	A, P0
+	anl	A, #00001111B
+	cjne	A, #00001111B, ROW_1
+	mov	P2, #11111011B
+	mov	A, P0
+	anl	A, #00001111B
+	cjne	A, #00001111B, ROW_2
+	mov	P2, #11110111B
+	mov	A, P0
+	anl	A, #00001111B
+	cjne	A, #00001111B, ROW_3
+	ljmp	K2
+	
+ROW_0:
+	mov	DPTR, #KCODE0
+	sjmp	KB_FIND
+ROW_1:
+	mov	DPTR, #KCODE1
+	sjmp	KB_FIND
+ROW_2:
+	mov	DPTR, #KCODE2
+	sjmp	KB_FIND
+ROW_3:
+	mov	DPTR, #KCODE3
+KB_FIND:
+	rrc	A
+	jnc	KB_MATCH
+	inc	DPTR
+	sjmp	KB_FIND
+KB_MATCH:
+	clr	A
+	movc	A, @A+DPTR; get ASCII code from the table 
+	ret
+
+;ASCII look-up table 
+KCODE0:	DB	'1', '2', '3', 'A'
+KCODE1:	DB	'4', '5', '6', 'B'
+KCODE2:	DB	'7', '8', '9', 'C'
+KCODE3:	DB	'*', '0', '#', 'D'
+END
+
+
+STOP:		sjmp STOP
+
+	END

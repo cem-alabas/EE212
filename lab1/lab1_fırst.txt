@@ -1,0 +1,17 @@
+﻿ORG 0
+	MOV R0, #0FAH ;input is stored in R0 because of the instructions
+	MOV A, R0
+	MOV B, #100
+	DIV AB
+	MOV R7, A ;first dgit stored in R7
+	MOV A,B
+	MOV B, #10
+	DIV AB
+	MOV R1, A ;second digit stored in r1
+	MOV R2, B ;third digit stored in r1
+	ADD A, B
+	ADD A,R7
+	MOV R3, A ;summation is written in the R3
+STOP:	SJMP STOP
+	END
+	
