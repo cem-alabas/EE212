@@ -1,0 +1,27 @@
+/*
+Tutorial Code based on Mazidi's Book
+
+Author: Ali Necat
+*/
+
+#include <MKL25Z4.H>
+#include <stdio.h>
+#include <math.h>
+//This is how you import a header file
+#include "utils.h"
+int foo(int a, int b);
+
+//This is where the code runs. Programs start from here
+int main(void){
+	
+	//Blink LED
+	blink();
+}
+
+
+
+
+int foo(int a, int b){
+	//This is bitwise OR
+	return a | b;
+}

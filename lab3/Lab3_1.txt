@@ -1,0 +1,97 @@
+#include <MKL25Z4.H>
+#include <stdio.h>
+
+#define RS 0x04     /* PTA2 mask */ 
+#define RW 0x10     /* PTA4 mask */ 
+#define EN 0x20     /* PTA5 mask */
+
+//Function Prototypes 
+//Either use this or define the functions before main funciton
+void Delay(volatile unsigned int time_del);
+void LCD_command(unsigned char command);
+void LCD_data(unsigned char data);
+void LCD_init(void);
+void LCD_ready(void);
+void keypad_init(void);
+void print_fnc(unsigned char *data);
+void clear_lcd(void);
+uint32_t keypad_getkey(void);
+void blink(void);
+void delay(uint32_t cycles);
+char * print_to_arr(char * buffer, float number, int precision);
+int get_number_from_keypad();
+
+
+#include <MKL25Z4.H>
+
+void custom_delay(int milliseconds) {
+    volatile int ms = milliseconds * 1905; // Approximately ms milliseconds delay
+    while (ms--) {}
+}
+
+void blink(void){
+    SIM->SCGC5 |= (1 << 10); // Enable clock to Port B
+    PORTB->PCR[0] = 0x100;
+    PORTB->PCR[1] = 0x100;
+    PORTB->PCR[2] = 0x100;
+    PORTB->PCR[3] = 0x100;
+    PTB->PDDR |= 0x0F; // PTB0-PTB3 as output
+
+    SIM->SCGC5 |= (1 << 9); // Enable clock to Port A
+    PORTA->PCR[1] = 0x103;
+    PORTA->PCR[2] = 0x103;
+    PORTA->PCR[4] = 0x103; // 
+    PTA->PDDR &= ~0x16; // PTA1, PTA2, PTA4 as input, PTA 1 is controlling the increasing or decreasing, Pta 2 and Pta 4 controls the rate
+
+    int count = 0;
+    int delayTime = 1000; // Default to 1000 ms
+
+ while (1) {
+        
+        int switch1 = PTA->PDIR & 0x02; // Reading PTA1
+        int switch2 = PTA->PDIR & 0x04; // Reading PTA2
+        int switch3 = PTA->PDIR & 0x10; // Reading PTA4
+
+        if (switch2 && switch3) { // Both switches 2 and 3 are open (High)
+            delayTime = 0; // Stop counting, it can be also adjusted such that the led are continuously open however i understand that 0 ms is stop counting
+        } else {
+            
+            if (!switch2 && !switch3) { // Both switches 2 and 3 are closed
+                delayTime = 250; // 250 ms rate 
+            } else if (!switch3) { // Switch 3 is closed
+                delayTime = 1000; // 1000 ms rate
+            } else if (!switch2) {
+                delayTime = 500; // 500 ms rate
+            }
+
+            // Increment or decrement count based on switch 1 which is the PTA 1
+            if (!switch1) { // Switch 1 is closed
+                count++; // Increase count
+            } else {
+                count--; // Decrease count
+            }
+        }
+
+        // When count decreasing and it 0000 it goeas to 1111 and when count increasing when it comes to 1111 it goeas to 0000
+        if (count < 0) {
+            count = 15;
+        } else if (count > 15) {
+            count = 0;
+        }
+
+        PTB->PDOR = count; // Output count connected to the outputs
+
+        if (delayTime > 0) {
+            custom_delay(delayTime); // Delay based on the selected rate
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
