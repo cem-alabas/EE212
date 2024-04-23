@@ -1,0 +1,105 @@
+ORG 0000h
+MOV P2, #0FFH  
+MAIN:
+    JNB P2.0, BEGIN  
+
+MOV TMOD, #0x11 
+MOV TH0, #0F4H  ;  Timer 0 for 170Hz
+MOV TL0, #8AH
+MOV TH1, #0FAH  ;  Timer 1 for 340Hz
+MOV TL1, #41H
+SETB TR0        
+SETB TR1        
+
+MAIN_LOOP1:
+    JNB P2.0, BEGIN  
+    JNB TF0, GEC1
+    CPL P2.6        
+    MOV TH0, #0F4H   
+    MOV TL0, #8AH
+    CLR TF0         
+    
+GEC1:
+    ; Check overflow flag for Timer 1 (TF1)
+    JNB TF1, GEC2
+    CPL P2.7        
+    MOV TH1, #0FAH  
+    MOV TL1, #41H
+    CLR TF1         
+    
+GEC2:
+    SJMP MAIN_LOOP1  ; Jump back to the start of the main loop
+
+
+BEGIN:
+MOV TMOD, #0x11 
+MOV TH0, #0FDH  
+MOV TL0, #25H
+MOV TH1, #0FAH  
+MOV TL1, #41H
+SETB TR0        ; Start Timer 0
+SETB TR1        ; Start Timer 1
+SETB P2.6
+SETB P2.7
+MAIN_LOOP:
+     JB P2.0, MAIN
+    JNB TF0, SKIP1
+    CLR P2.6        
+    MOV TH0, #0F7H   
+    MOV TL0, #62H
+    CLR TF0
+    SJMP HERE1
+
+SKIP1:
+    JNB TF1, MAIN_LOOP
+
+HERE0:
+    JNB TF1, HERE1
+    CLR P2.7       
+    MOV TH1, #0EEH
+    MOV TL1, #0C5H
+    CLR TF1
+    SJMP HERE2
+HERE1:
+	JNB TF0, HERE0
+HERE11:
+	JNB TF0, HERE2
+	SETB P2.6
+	MOV TH0, #0FDH  
+	MOV TL0, #25H
+	CLR TF0
+	SJMP HERE21
+HERE2:
+	JNB TF1, HERE11
+
+HERE3:
+	JNB TF0, HERE21
+	CLR P2.6
+	MOV TH0, #0F7H   
+        MOV TL0, #62H
+        CLR TF0
+        SJMP HERE22
+HERE21:
+	JNB TF1, HERE3
+HERE31:
+	JNB TF0, HERE22
+	SETB P2.6
+	MOV TH0, #0FDH  
+	MOV TL0, #25H
+	CLR TF0
+	SJMP HERE22
+
+HERE22:
+	JNB TF1, HERE31
+	SETB P2.7
+	MOV TH1, #0FAH  
+	MOV TL1, #41H
+	CLR TF1
+	sjmp MAIN_LOOP	; Jump back to the start of the main loop
+LJMP MAIN
+
+END
+
+
+
+
